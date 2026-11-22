@@ -83,3 +83,17 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   because both use one chunk worker; 8 CPUs (two workers) nearly halves the
   time. Generation follows the worker count, not the CPU count. C5 becomes
   the first hole to work on after the baseline finishes.
+- 2026-11-23 00:38 — The owner asked for PRs to be merged when CI is green
+  and the numbers support them, and for Rust to be used where a hole calls for
+  it (never unused code). Merged PR #1 (harness, bot, probe, docs, website) with
+  a merge commit after CI passed. The first Pages deploy was rejected because
+  the github-pages environment only allowed the old default branch
+  `ver/26.3.x`; added `main` to its allowed branches and redeployed. The site
+  is live at https://neonjava.github.io/Atlas/.
+- 2026-11-23 02:39 — Chunk baseline finished (45 runs). Median time to a
+  full view after a teleport to new land: vd8 10.3 / 10.5 / 5.6 s, vd12
+  19.3 / 19.0 / 9.5 s, vd16 32.1 / 31.4 / 15.1 s for 2 / 4 / 8 CPUs. Runs
+  agree within about ±5%. The last run's script hung after finishing (an
+  in-place edit made earlier in the night shifted bash's read position, so it
+  re-ran a stray console write into a closed FIFO); all 45 archives are
+  complete. Started the queue: profiling runs, then the C5 experiment.
