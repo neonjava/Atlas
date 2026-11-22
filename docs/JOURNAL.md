@@ -59,13 +59,13 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   Markdown, numbers and charts only from `bench/results/**/summary.json`, the
   Story from this journal and Updates from git history. Background drawn with
   CSS gradients and a seeded SVG star layer.
-- 2026-11-22 23:30 — Read how Folia sizes its pools: chunk workers are
-  `cores/2`, cut to 1 when that is ≤ 3 (so 1 worker on a 2-, 4- or 6-CPU
-  machine) and tick threads are `cores/2`. The CPU count comes from a native
-  call that respects `taskset`: the 2-CPU runs log "1 worker threads" and
-  "1 target thread(s)". So on small machines one thread generates all new
-  terrain. Added as candidate C5; an experiment with more workers comes after
-  the baseline.
+- 2026-11-22 23:30 — Read how Folia sizes its pools (c = CPUs the JVM may
+  use): tick threads = 1 if c/2 ≤ 4, else c/8; chunk workers = 1 if c ≤ 7,
+  2 if c ≤ 9, else c/4. The 2- and 4-CPU runs both log "1 worker threads"
+  and "1 target thread(s)"; a direct test shows the CPU count here comes from
+  `availableProcessors()`, which respects `taskset`. So on machines with up
+  to 7 CPUs one thread generates all new terrain. Added as candidate C5; an
+  experiment with more workers comes after the baseline.
 - 2026-11-22 23:33 — Caught a bad metric before trusting it: in the chunk
   baseline the flying bot reported a 100% full view while receiving zero new
   chunks after spawn. It was flying at spawn height, ran into a hill, and the
