@@ -1,0 +1,31 @@
+# atlas-tools.yml — checks the Atlas benchmark tools and the website build.
+# The server itself is built by build.yml (from upstream Folia).
+name: Atlas tools
+
+on:
+  push:
+    branches-ignore:
+      - ver/26.3.x
+  pull_request:
+
+jobs:
+  tools:
+    if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-java@v5
+        with:
+          java-version: 25
+          distribution: 'zulu'
+      - name: Compile bot
+        run: javac -Xlint:all -Werror -d /tmp/bot $(find tools/atlas-bot/src -name '*.java')
+      - name: Check shell scripts
+        run: for f in bench/lib/*.sh bench/scenarios/*.sh tools/*/build.sh; do bash -n "$f"; done
+      - name: Build site
+        run: |
+          python3 -m pip install --user markdown==3.10.3 pyyaml
+          python3 site/build.py --out /tmp/site

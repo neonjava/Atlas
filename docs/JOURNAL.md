@@ -33,3 +33,29 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   PR is stacked on that PR's branch and says so in its description.
 - 2026-11-22 23:25 — Folia's jar task in this version is `createPaperclipJar`
   (not `createMojmapPaperclipJar`); README fixed.
+- 2026-11-22 23:00 — Built the unmodified baseline jar (`createPaperclipJar`,
+  2 min 21 s) and froze a copy as `~/atlas-build/jars/baseline.jar`
+  (sha256 `c6d24832…`).
+- 2026-11-22 23:05 — Bot client works against 26.3: a single bot joined in
+  4.3 s and, at view distance 8 on 4 pinned CPUs, its 257-chunk view was full
+  12.2 s after joining a fresh world; a console `/tp` to new land was full
+  after 11.7 s (about 22 generated chunks per second). These are smoke-test
+  numbers, not the baseline.
+- 2026-11-22 23:10 — Found while building the harness: in this Folia build a
+  console command sent the moment the server prints "Done" can fail with a
+  NullPointerException (the console command source has no level yet), and the
+  `/stop` is lost. The harness now waits 5 s after "Done". Not reported
+  upstream (Atlas only works in its own repository).
+- 2026-11-22 23:15 — Found while writing the probe: in the timing library
+  used by Folia (`ca.spottedleaf.common.time.TickData`, leafpile 1.3.2), the
+  "worst 5%" and "worst 1%" fields of a tick report hold each other's values
+  (the arguments are passed in a different order than the record declares).
+  Folia's own health output inherits this. The Atlas probe computes p50, p95,
+  p99 and max itself from the raw samples, so Atlas numbers do not depend on it.
+- 2026-11-22 23:20 — Started the full chunk-loading baseline: view distance
+  8 / 12 / 16 × 2 / 4 / 8 server threads × 5 runs, 6 teleports per run (first
+  is warm-up) plus 90 s of flight.
+- 2026-11-22 23:40 — Wrote the website generator (`site/build.py`): pages in
+  Markdown, numbers and charts only from `bench/results/**/summary.json`, the
+  Story from this journal and Updates from git history. Background drawn with
+  CSS gradients and a seeded SVG star layer.
