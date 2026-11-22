@@ -4,7 +4,8 @@
  * Why: benchmark numbers must come from data files, so every measurement the
  * bots make is written as one CSV row that the analysis scripts read later.
  * Columns: t_ms (since the bot process started), bot, event, a, b.
- * Done: buffered append, flush on close.
+ * Done: append with a flush per row, so benchmark scripts can follow the
+ * file live (rows are small and at most a few hundred per second).
  * Not done: no rotation; one run writes one file.
  *
  * Part of Atlas. GPL-3.0.
@@ -34,6 +35,7 @@ final class EventLog implements AutoCloseable {
     synchronized void log(final String bot, final String event, final Object a, final Object b) {
         try {
             this.out.write(nowMillis() + "," + bot + "," + event + "," + a + "," + b + "\n");
+            this.out.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
