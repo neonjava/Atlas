@@ -20,3 +20,6 @@ build
 
 # Atlas: generated website
 site/_build/
+
+# Atlas: Rust build output
+native/atlas-native/target/
