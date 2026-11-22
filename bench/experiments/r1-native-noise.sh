@@ -6,7 +6,8 @@
 # A/B on the SAME jar: "java" runs with -Datlas.native=false, "native" runs
 # with the Rust library; nothing else differs. Runs alternate (java 1,
 # native 1, java 2, ...) so slow drift (heat, background load) hits both.
-# Configs: view distance 12 and 16 at 2 and 4 CPUs (the small-CPU target).
+# Configs: view distance 12 and 16 at 4 CPUs (the small-CPU target; 4 CPUs
+# rather than 2 so the result is not hidden by the worker-thread limit alone).
 # Labels: exp-r1-java, exp-r1-native.
 # Done: both arms, RUNS runs each; check that each native run loaded the library.
 # Not done: deciding (see HOLES.md and the PR).
@@ -16,9 +17,9 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 jar="$1"; lib="$2"; runs="${3:-5}"
 for run in $(seq 1 "$runs"); do
-    JVM_FLAGS="-Datlas.native=false" VIEW_DISTANCES="12 16" THREADS="2 4" \
+    JVM_FLAGS="-Datlas.native=false" VIEW_DISTANCES="12 16" THREADS="4" \
         bash "$here/../scenarios/chunks.sh" "$jar" exp-r1-java "$run"
-    JVM_FLAGS="-Datlas.native.path=$lib" VIEW_DISTANCES="12 16" THREADS="2 4" \
+    JVM_FLAGS="-Datlas.native.path=$lib" VIEW_DISTANCES="12 16" THREADS="4" \
         bash "$here/../scenarios/chunks.sh" "$jar" exp-r1-native "$run"
 done
 results="$here/../results/chunks"
