@@ -34,6 +34,11 @@ ATLAS_SERVER_SET="${ATLAS_SERVER_SET:-}"
 # with `jfr view` are kept (a raw recording is hundreds of MB).
 ATLAS_JFR="${ATLAS_JFR:-0}"
 ATLAS_JFR_VIEWS="hot-methods allocation-by-class gc-pauses contention-by-site cpu-time-hot-methods"
+# Experiment knob (hole C5): if set, the server's chunk worker threads get
+# this nice value right after start, so tick threads win when both want a CPU.
+# Raising the nice value of one's own threads needs no privileges.
+ATLAS_WORKER_NICE="${ATLAS_WORKER_NICE:-}"
+ATLAS_WORKER_THREAD_NAME="Paper Common Worker"
 ATLAS_TEMPLATE_THREADS=4
 ATLAS_TEMPLATE_HEAP=2G
 
@@ -116,7 +121,25 @@ atlas_start() {
             "$@" -jar server.jar --nogui < console.fifo > server.log 2>&1
     ) > /dev/null 2>&1 &
     echo $! > "$dir/launcher.pid"
-    atlas_wait_ready "$dir"
+    atlas_wait_ready "$dir" || return 1
+    if [[ -n "$ATLAS_WORKER_NICE" ]]; then
+        atlas_renice_workers "$dir" "$ATLAS_WORKER_NICE"
+    fi
+}
+
+# atlas_renice_workers <run-dir> <nice> — sets the nice value of the chunk
+# worker threads of this run's server and records which threads it changed.
+atlas_renice_workers() {
+    local dir="$1" nice="$2" pid task count=0
+    pid="$(atlas_server_pid "$dir")"
+    for task in /proc/"$pid"/task/*; do
+        # The kernel keeps only the first 15 characters of a thread name.
+        if [[ "$(cat "$task/comm" 2>/dev/null)" == "${ATLAS_WORKER_THREAD_NAME:0:15}"* ]]; then
+            renice -n "$nice" -p "${task##*/}" > /dev/null
+            count=$((count + 1))
+        fi
+    done
+    echo "worker_nice=$nice threads=$count" > "$dir/worker-nice.txt"
 }
 
 atlas_server_pid() {
@@ -303,6 +326,6 @@ PY
     (
         cd "$dir" || exit 1
         shopt -s nullglob
-        tar -czf "$dest" meta.json marks*.csv server-set.txt jfr-*.txt bot*.csv probe*.csv gc.log* safepoint.log* server.log
+        tar -czf "$dest" meta.json marks*.csv server-set.txt worker-nice*.txt jfr-*.txt bot*.csv probe*.csv gc.log* safepoint.log* server.log
     )
 }
