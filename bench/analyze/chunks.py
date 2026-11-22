@@ -5,8 +5,13 @@
 # shown on the website, so no number is typed by hand.
 # chunks.sh, per run: median fill50/fill90/fill100 over the measured teleports
 # (the first teleport is a warm-up), fills that timed out, the server's mean
-# chunk generation rate, and global-region tick interval p99 / max over the
-# whole run (does faster generation cost tick time?).
+# chunk generation rate, and global-region tick interval p99 / max from the
+# first measured teleport on (does faster generation cost tick time?). The
+# first seconds after start are excluded: they hold JIT warm-up and metaspace
+# collections, with tick gaps of 150-460 ms in every configuration.
+# Clock alignment uses the epoch rows; archives made before epoch rows existed
+# fall back to treating both clocks as equal (the probe starts at most about a
+# second before the bot, which only moves the window edge).
 # fly.sh, per run: median and worst view coverage after the first FLY_SKIP_S
 # seconds (join and climb), and server position corrections (non-zero means
 # the bot was held back and the run is suspect).
@@ -45,6 +50,7 @@ def teleport_metrics(files: dict) -> dict:
             current[r["event"]] = int(r["a"]) / MS_PER_S
             current["chunks"] = int(r["b"])
     measured = teleports[1 + WARMUP_TELEPORTS:]  # [0] is the join itself
+    bot_epoch = next((float(r["a"]) for r in bot if r["event"] == "epoch"), None)
     m = {"teleports": len(measured)}
     for ev in ("fill50", "fill90", "fill100"):
         vals = [t[ev] for t in measured if ev in t]
@@ -52,8 +58,11 @@ def teleport_metrics(files: dict) -> dict:
     m["timeouts"] = sum(1 for t in measured if "fill100" not in t)
     m["view_chunks"] = measured[0].get("chunks") if measured else None
     m["server_gen_rate_mean"] = gen_rate(files)
-    ticks = [float(r["v1"]) / US_PER_MS for r in common.rows(files.get("probe.csv", "t_ms,kind,region,v1\n"))
-             if r["kind"] == "gtick"]
+    probe = common.rows(files.get("probe.csv", "t_ms,kind,region,v1\n"))
+    probe_epoch = next((float(r["v1"]) for r in probe if r["kind"] == "epoch"), None)
+    offset = (bot_epoch - probe_epoch) if bot_epoch is not None and probe_epoch is not None else 0.0
+    window_start = measured[0]["t"] + offset if measured else float("inf")
+    ticks = [float(r["v1"]) / US_PER_MS for r in probe if r["kind"] == "gtick" and float(r["t_ms"]) >= window_start]
     m["tick_p99_ms"] = common.percentile(ticks, TICK_PERCENTILE)
     m["tick_max_ms"] = max(ticks) if ticks else None
     return m
