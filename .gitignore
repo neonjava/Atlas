@@ -17,3 +17,6 @@ build
 /folia-checkstyle/build.gradle.kts
 
 .idea/
+
+# Atlas: generated website
+site/_build/
