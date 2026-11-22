@@ -59,14 +59,14 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   Markdown, numbers and charts only from `bench/results/**/summary.json`, the
   Story from this journal and Updates from git history. Background drawn with
   CSS gradients and a seeded SVG star layer.
-- 2026-11-22 23:35 — Read how Folia sizes its pools: chunk workers are
+- 2026-11-22 23:30 — Read how Folia sizes its pools: chunk workers are
   `cores/2`, cut to 1 when that is ≤ 3 (so 1 worker on a 2-, 4- or 6-CPU
   machine) and tick threads are `cores/2`. The CPU count comes from a native
   call that respects `taskset`: the 2-CPU runs log "1 worker threads" and
   "1 target thread(s)". So on small machines one thread generates all new
   terrain. Added as candidate C5; an experiment with more workers comes after
   the baseline.
-- 2026-11-22 23:50 — Caught a bad metric before trusting it: in the chunk
+- 2026-11-22 23:33 — Caught a bad metric before trusting it: in the chunk
   baseline the flying bot reported a 100% full view while receiving zero new
   chunks after spawn. It was flying at spawn height, ran into a hill, and the
   server silently held it in place every tick. Fixes: flyers now climb to
@@ -74,6 +74,6 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   so a stuck bot shows up in the data; flying moved into its own scenario
   (`fly.sh`). The teleport metrics of the chunk baseline are not affected;
   its flight data is ignored by the analysis and not shown anywhere.
-- 2026-11-22 23:50 — Lesson: bash reads a running script from disk as it
+- 2026-11-22 23:33 — Lesson: bash reads a running script from disk as it
   goes, so a running scenario script is now only ever replaced atomically
   (write a new file, then rename), never edited in place.
