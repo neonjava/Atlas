@@ -69,6 +69,7 @@ final class Bot implements Runnable {
     private final EventLog log;
     private final ScheduledExecutorService ticker;
     private final Random random;
+    private final Mode mode;
 
     private Connection conn;
     private volatile Phase phase = Phase.LOGIN;
@@ -107,8 +108,10 @@ final class Bot implements Runnable {
         this.log = log;
         this.ticker = ticker;
         this.random = new Random(opt.seed + index);
+        // The first `flyers` bots fly; the rest use the main mode.
+        this.mode = index < opt.flyers ? Mode.FLY : opt.mode;
         // Spread fly headings evenly with the golden angle so flying bots do not share chunks.
-        this.heading = opt.mode == Mode.FLY && opt.count > 1 ? index * Math.PI * (3.0 - Math.sqrt(5.0)) : 0.0;
+        this.heading = this.mode == Mode.FLY ? index * Math.PI * (3.0 - Math.sqrt(5.0)) : 0.0;
     }
 
     @Override
@@ -291,7 +294,7 @@ final class Bot implements Runnable {
         if (!this.sentLoaded) {
             this.sentLoaded = true;
             send("player_loaded", new Wire.Out());
-            if (this.opt.mode != Mode.IDLE) {
+            if (this.mode != Mode.IDLE) {
                 send("player_abilities", new Wire.Out().u8(ABILITY_FLYING));
             }
             this.spawned = true;
@@ -391,7 +394,7 @@ final class Bot implements Runnable {
     private boolean move(final int t) {
         double step = this.opt.speedBlocksPerSecond * TICK_MS / 1000.0;
         synchronized (this.posLock) {
-            switch (this.opt.mode) {
+            switch (this.mode) {
                 case IDLE -> {
                     return false;
                 }
@@ -428,7 +431,7 @@ final class Bot implements Runnable {
             bytes = this.bytesThisSecond;
             this.chunksThisSecond = 0;
             this.bytesThisSecond = 0;
-            if (this.opt.mode == Mode.FLY) {
+            if (this.mode == Mode.FLY) {
                 Set<Long> visible = visibleChunks(cx, cz);
                 int have = 0;
                 for (long k : visible) {

@@ -10,7 +10,9 @@
  *        --events <out.csv> [--host 127.0.0.1] [--port 25565] [--count 1]
  *        [--prefix bot] [--mode idle|fly|wander] [--speed 20] [--view 12]
  *        [--wander-radius 32] [--join-interval-ms 200] [--duration-s 60]
- *        [--chunks-per-tick 64] [--seed 1]
+ *        [--chunks-per-tick 64] [--seed 1] [--flyers 0]
+ *
+ * --flyers K makes bots 0..K-1 fly outward (fresh terrain) whatever --mode is.
  *
  * Part of Atlas. GPL-3.0.
  */
@@ -44,6 +46,7 @@ public final class Main {
         long durationSeconds = 60;
         float chunksPerTick = MAX_CHUNKS_PER_TICK;
         long seed = 1;
+        int flyers;
     }
 
     private Main() {
@@ -93,6 +96,7 @@ public final class Main {
                 case "--duration-s" -> o.durationSeconds = Long.parseLong(v);
                 case "--chunks-per-tick" -> o.chunksPerTick = Float.parseFloat(v);
                 case "--seed" -> o.seed = Long.parseLong(v);
+                case "--flyers" -> o.flyers = Integer.parseInt(v);
                 default -> throw new IllegalArgumentException("unknown option " + args[i]);
             }
         }

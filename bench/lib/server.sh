@@ -48,6 +48,12 @@ atlas_template() {
         python3 -I "$ATLAS_BENCH_DIR/lib/configure.py" "$dir" --seed "$ATLAS_SEED" --port "$ATLAS_PORT"
         touch "$dir/.ready"
     fi
+    # The probe is built once per scenario run (not per server run), so editing
+    # its source while a benchmark runs cannot change that benchmark.
+    if [[ ! -f "$dir/atlas-probe-$$.jar" ]]; then
+        rm -f "$dir"/atlas-probe-*.jar
+        bash "$ATLAS_BENCH_DIR/../tools/atlas-probe/build.sh" "$dir" "$dir/atlas-probe-$$.jar" || return 1
+    fi
     echo "$dir"
 }
 
@@ -64,7 +70,7 @@ atlas_new_run() {
     cp "$template"/*.yml "$template"/*.json "$template/server.properties" "$dir/" 2>/dev/null || true
     python3 -I "$ATLAS_BENCH_DIR/lib/configure.py" "$dir" --view-distance "$vd"
     mkdir -p "$dir/plugins"
-    bash "$ATLAS_BENCH_DIR/../tools/atlas-probe/build.sh" "$dir" "$dir/plugins/atlas-probe.jar"
+    cp "$template/atlas-probe-$$.jar" "$dir/plugins/atlas-probe.jar"
     echo "$dir"
 }
 
@@ -127,6 +133,39 @@ atlas_cmd() {
     echo "$*" > "$dir/console.fifo"
 }
 
+# atlas_mark <run-dir> <name> — records a wall-clock mark, the server's
+# CPU time so far (user+system, in clock ticks of `getconf CLK_TCK`) and the
+# JVM start time; used to cut measurement windows and compute CPU cost.
+atlas_mark() {
+    local dir="$1" name="$2" pid cpu="" start_ms="" tck btime fields
+    pid="$(atlas_server_pid "$dir")"
+    tck="$(getconf CLK_TCK)"
+    if [[ -n "$pid" && -r "/proc/$pid/stat" ]]; then
+        # Strip "pid (comm) " first since comm may hold spaces; then field 14/15
+        # (utime/stime) are $12/$13 and field 22 (start time) is $20.
+        fields="$(sed 's/^.*) //' "/proc/$pid/stat")"
+        cpu="$(awk '{print $12 + $13}' <<< "$fields")"
+        btime="$(awk '/^btime/ {print $2}' /proc/stat)"
+        # JVM start as wall-clock ms: lines GC log "uptime" up with the marks.
+        start_ms="$(awk -v b="$btime" -v t="$tck" '{printf "%d", (b + $20 / t) * 1000}' <<< "$fields")"
+    fi
+    [[ -f "$dir/marks.csv" ]] || echo "name,epoch_ms,cpu_ticks,clk_tck,jvm_start_epoch_ms" > "$dir/marks.csv"
+    echo "$name,$(date +%s%3N),$cpu,$tck,$start_ms" >> "$dir/marks.csv"
+}
+
+# atlas_wait_bots <csv> <count> <timeout-s> — waits until <count> bots joined.
+atlas_wait_bots() {
+    local csv="$1" count="$2" timeout="$3" waited=0 joined
+    while (( waited < timeout )); do
+        joined="$(grep -c ',joined,' "$csv" 2>/dev/null || true)"
+        (( joined >= count )) && return 0
+        sleep 1
+        waited=$((waited + 1))
+    done
+    echo "bots: only ${joined:-0}/$count joined after ${timeout}s" >&2
+    return 1
+}
+
 # atlas_wait_log <run-dir> <regex> <timeout-s> — waits for a server.log line.
 atlas_wait_log() {
     local dir="$1" pattern="$2" timeout="$3" waited=0
@@ -187,9 +226,17 @@ _atlas_bot_command() {
         --port "$ATLAS_PORT" --events "$out" "$@")
 }
 
-# Compiles the bot once per shell into the build dir.
+# Compiles the bot once per scenario script, into a folder of its own so a
+# second script cannot change the bot under a running benchmark. Folders of
+# scripts that have exited are removed.
 atlas_build_bot() {
-    ATLAS_BOT_CLASSES="$ATLAS_BUILD_DIR/bot-classes"
+    local old pid
+    for old in "$ATLAS_BUILD_DIR"/bot-classes-*; do
+        [[ -d "$old" ]] || continue
+        pid="${old##*-}"
+        kill -0 "$pid" 2>/dev/null || rm -rf "$old"
+    done
+    ATLAS_BOT_CLASSES="$ATLAS_BUILD_DIR/bot-classes-$$"
     rm -rf "$ATLAS_BOT_CLASSES"
     javac -d "$ATLAS_BOT_CLASSES" $(find "$ATLAS_BENCH_DIR/../tools/atlas-bot/src" -name '*.java')
 }
@@ -232,6 +279,6 @@ PY
     (
         cd "$dir" || exit 1
         shopt -s nullglob
-        tar -czf "$dest" meta.json bot*.csv probe*.csv gc.log* safepoint.log* server.log
+        tar -czf "$dest" meta.json marks*.csv bot*.csv probe*.csv gc.log* safepoint.log* server.log
     )
 }

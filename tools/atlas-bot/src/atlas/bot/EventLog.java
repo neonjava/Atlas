@@ -3,7 +3,9 @@
  *
  * Why: benchmark numbers must come from data files, so every measurement the
  * bots make is written as one CSV row that the analysis scripts read later.
- * Columns: t_ms (since the bot process started), bot, event, a, b.
+ * Columns: t_ms (since the bot process started), bot, event, a, b. The first
+ * row ("epoch") gives the wall-clock time of t_ms = 0, so rows can be lined
+ * up with the server probe and the harness marks.
  * Done: append with a flush per row, so benchmark scripts can follow the
  * file live (rows are small and at most a few hundred per second).
  * Not done: no rotation; one run writes one file.
@@ -26,6 +28,7 @@ final class EventLog implements AutoCloseable {
     EventLog(final Path file) throws IOException {
         this.out = Files.newBufferedWriter(file, StandardCharsets.UTF_8);
         this.out.write("t_ms,bot,event,a,b\n");
+        log("main", "epoch", System.currentTimeMillis(), 0);
     }
 
     long nowMillis() {

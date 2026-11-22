@@ -11,7 +11,8 @@
  * chunk generate and load rates.
  * Not done: no in-game UI; only one watched location at a time.
  *
- * CSV columns: t_ms,kind,region,v1..v10 (meaning depends on kind; see
+ * CSV columns: t_ms,kind,region,v1..v10; the first row (kind "epoch") holds
+ * the wall-clock time of t_ms = 0. (meaning depends on kind; see
  * bench/README.md). Controlled from the console:
  *   atlasprobe start <csv-path>   atlasprobe watch <x> <z>   atlasprobe stop
  *
@@ -97,6 +98,8 @@ public final class ProbePlugin extends JavaPlugin {
             throw new UncheckedIOException(e);
         }
         this.startNanos = System.nanoTime();
+        // Wall-clock time of t_ms = 0, to line rows up with bot and harness logs.
+        row(this.startNanos, "epoch", "server", System.currentTimeMillis());
         long[] last = {System.nanoTime()};
         this.globalTick = Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, task -> {
             long now = System.nanoTime();
