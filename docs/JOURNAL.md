@@ -90,3 +90,10 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   the github-pages environment only allowed the old default branch
   `ver/26.3.x`; added `main` to its allowed branches and redeployed. The site
   is live at https://neonjava.github.io/Atlas/.
+- 2026-11-23 02:39 — Chunk baseline finished (45 runs). Median time to a
+  full view after a teleport to new land: vd8 10.3 / 10.5 / 5.6 s, vd12
+  19.3 / 19.0 / 9.5 s, vd16 32.1 / 31.4 / 15.1 s for 2 / 4 / 8 CPUs. Runs
+  agree within about ±5%. The last run's script hung after finishing (an
+  in-place edit made earlier in the night shifted bash's read position, so it
+  re-ran a stray console write into a closed FIFO); all 45 archives are
+  complete. Started the queue: profiling runs, then the C5 experiment.
