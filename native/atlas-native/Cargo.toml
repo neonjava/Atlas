@@ -1,0 +1,22 @@
+# atlas-native — Rust kernels for Atlas (GPL-3.0).
+# Only kernels that measurably beat the Java code are kept; see docs/HOLES.md.
+[package]
+name = "atlas-native"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[features]
+# JNI entry point used only by native/bench to compare JNI with FFM call cost.
+# It is not built into the library the server uses.
+jni-bench = []
