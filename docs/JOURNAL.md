@@ -55,7 +55,7 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
 - 2026-11-22 23:20 — Started the full chunk-loading baseline: view distance
   8 / 12 / 16 × 2 / 4 / 8 server threads × 5 runs, 6 teleports per run (first
   is warm-up) plus 90 s of flight.
-- 2026-11-22 23:40 — Wrote the website generator (`site/build.py`): pages in
+- 2026-11-22 23:27 — Wrote the website generator (`site/build.py`): pages in
   Markdown, numbers and charts only from `bench/results/**/summary.json`, the
   Story from this journal and Updates from git history. Background drawn with
   CSS gradients and a seeded SVG star layer.

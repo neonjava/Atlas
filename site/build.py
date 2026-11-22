@@ -59,8 +59,10 @@ METRICS = {
     "mspt_mean": ("Work per tick (MSPT), mean", "ms"),
     "mspt_p99": ("Work per tick (MSPT), 99th percentile", "ms"),
     "tps_min_window": ("Lowest 15 s TPS", "TPS"),
-    "gc_pause_max_ms": ("Longest GC pause", "ms"),
-    "gc_pause_total_ms_per_min": ("GC pause time per minute", "ms/min"),
+    "stw_pause_max_ms": ("Longest stop-the-world pause (mostly GC)", "ms"),
+    "stw_pause_total_ms_per_min": ("Stop-the-world pause time per minute", "ms/min"),
+    "region_tick_p99_ms": ("Crowd region tick interval, 99th percentile", "ms"),
+    "region_tick_max_ms": ("Crowd region longest tick interval", "ms"),
     "cpu_cores_used": ("CPU used", "cores"),
     "net_kib_per_player_s": ("Network per player", "KiB/s"),
 }

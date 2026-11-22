@@ -26,6 +26,6 @@ around the player the server sends, in each direction.
 TPS, garbage collection, crowds and idle cost are measured after the chunk
 baseline. Their tables appear here when the runs are done.
 
-[[table gc baseline tick_p99_ms tick_max_ms gc_pause_max_ms gc_pause_total_ms_per_min]]
+[[table gc baseline tick_p99_ms tick_max_ms stw_pause_max_ms stw_pause_total_ms_per_min]]
 
 [[table crowd baseline mspt_mean mspt_p99 tick_p99_ms]]

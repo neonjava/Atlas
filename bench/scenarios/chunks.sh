@@ -26,6 +26,8 @@ runs="${3:-5}"
 VIEW_DISTANCES=(${VIEW_DISTANCES:-8 12 16})
 THREADS=(${THREADS:-2 4 8})
 HEAP="${HEAP:-4G}"
+# Extra JVM flags for an experiment (baseline: none beyond the heap size).
+JVM_FLAGS="${JVM_FLAGS:-}"
 # The first teleport is a warm-up (JIT, caches); analysis uses the rest.
 TELEPORTS="${TELEPORTS:-6}"
 # Teleport targets are this far apart (blocks) on the +X axis, far beyond any
@@ -67,7 +69,8 @@ for vd in "${VIEW_DISTANCES[@]}"; do
             atlas_guard_disk
             echo "[$(date +%H:%M:%S)] chunks $label $cfg run $run"
             dir="$(atlas_new_run "$template" "chunks-$label-$cfg-$run" "$vd")"
-            atlas_start "$dir" "$t" "$HEAP"
+            # shellcheck disable=SC2086  # JVM_FLAGS is a list of flags on purpose
+            atlas_start "$dir" "$t" "$HEAP" ${JVM_FLAGS:-}
             atlas_cmd "$dir" "atlasprobe start $dir/probe.csv"
             atlas_bots_start "$dir" "$dir/bot.csv" --count 1 --prefix walker --view "$vd" --mode idle --duration-s "$BOT_MAX_SECONDS"
             wait_event "$dir/bot.csv" fill100 0 "$FILL_TIMEOUT_S" || echo "  warm-up fill timed out"

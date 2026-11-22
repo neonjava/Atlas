@@ -27,6 +27,13 @@ ATLAS_LOG_FILE_COUNT="${ATLAS_LOG_FILE_COUNT:-4}"
 # Console commands sent right after "Done" can hit a NullPointerException in
 # Folia (the console source has no level yet), so wait a little first.
 ATLAS_SETTLE_S="${ATLAS_SETTLE_S:-5}"
+# Config overrides for an experiment: space-separated "file:key=value" items
+# passed to configure.py --set (for example "config/paper-global.yml:a.b=1").
+ATLAS_SERVER_SET="${ATLAS_SERVER_SET:-}"
+# ATLAS_JFR=1 records a Java Flight Recorder profile; only text summaries made
+# with `jfr view` are kept (a raw recording is hundreds of MB).
+ATLAS_JFR="${ATLAS_JFR:-0}"
+ATLAS_JFR_VIEWS="hot-methods allocation-by-class gc-pauses contention-by-site cpu-time-hot-methods"
 ATLAS_TEMPLATE_THREADS=4
 ATLAS_TEMPLATE_HEAP=2G
 
@@ -68,7 +75,12 @@ atlas_new_run() {
     cp "$template/server.jar" "$template/eula.txt" "$dir/"
     cp -r "$template/config" "$dir/"
     cp "$template"/*.yml "$template"/*.json "$template/server.properties" "$dir/" 2>/dev/null || true
-    python3 -I "$ATLAS_BENCH_DIR/lib/configure.py" "$dir" --view-distance "$vd"
+    local sets=() item
+    for item in $ATLAS_SERVER_SET; do
+        sets+=(--set "$item")
+    done
+    python3 -I "$ATLAS_BENCH_DIR/lib/configure.py" "$dir" --view-distance "$vd" "${sets[@]}"
+    echo "$ATLAS_SERVER_SET" > "$dir/server-set.txt"
     mkdir -p "$dir/plugins"
     cp "$template/atlas-probe-$$.jar" "$dir/plugins/atlas-probe.jar"
     echo "$dir"
@@ -90,6 +102,9 @@ atlas_start() {
     sleep infinity > "$dir/console.fifo" 2>/dev/null &
     echo $! > "$dir/fifo-holder.pid"
     echo "$cpus" > "$dir/cpus.txt"
+    if [[ "$ATLAS_JFR" == 1 ]]; then
+        set -- "$@" "-XX:StartFlightRecording=filename=$dir/profile.jfr,settings=profile,dumponexit=true"
+    fi
     printf '%s\n' "-Xms$heap" "-Xmx$heap" "$@" > "$dir/jvm-flags.txt"
     (
         cd "$dir" || exit 1
@@ -191,6 +206,14 @@ atlas_stop() {
             kill -9 "$pid"
         fi
     fi
+    if [[ -f "$dir/profile.jfr" ]]; then
+        local view
+        for view in $ATLAS_JFR_VIEWS; do
+            jfr view --width 220 --truncate beginning "$view" "$dir/profile.jfr" > "$dir/jfr-$view.txt" 2>&1 || true
+        done
+        python3 -I "$ATLAS_BENCH_DIR/analyze/jfr_stacks.py" "$dir/profile.jfr" > "$dir/jfr-stacks.txt" 2>&1 || true
+        rm -f "$dir/profile.jfr"
+    fi
     if [[ -f "$dir/fifo-holder.pid" ]]; then
         kill "$(cat "$dir/fifo-holder.pid")" 2>/dev/null || true
         rm -f "$dir/fifo-holder.pid"
@@ -269,6 +292,7 @@ print(json.dumps({
     "jar_sha256": subprocess.run(["sha256sum", str(d / "server.jar")], capture_output=True, text=True).stdout.split()[0],
     "cpus": read("cpus.txt"),
     "jvm_flags": (read("jvm-flags.txt") or "").splitlines(),
+    "server_set": (read("server-set.txt") or "").split(),
     "view_distance": props.get("view-distance"),
     "simulation_distance": props.get("simulation-distance"),
     "seed": props.get("level-seed"),
@@ -279,6 +303,6 @@ PY
     (
         cd "$dir" || exit 1
         shopt -s nullglob
-        tar -czf "$dest" meta.json marks*.csv bot*.csv probe*.csv gc.log* safepoint.log* server.log
+        tar -czf "$dest" meta.json marks*.csv server-set.txt jfr-*.txt bot*.csv probe*.csv gc.log* safepoint.log* server.log
     )
 }

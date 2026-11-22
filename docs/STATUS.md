@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-11-22 23:40 (IST).
+Last updated: 2026-11-22 23:28 (IST).
 
 - **Phase 1 (baseline): in progress.** The untouched Folia 26.3 build is
   tagged `baseline-folia-26.3` and frozen as a jar. The bot client, server
