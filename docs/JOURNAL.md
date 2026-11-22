@@ -77,3 +77,9 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
 - 2026-11-22 23:33 — Lesson: bash reads a running script from disk as it
   goes, so a running scenario script is now only ever replaced atomically
   (write a new file, then rename), never edited in place.
+- 2026-11-23 00:07 — First baseline evidence for C5 (view distance 8,
+  5 runs each, median time to a full view after a teleport): 2 CPUs 10.3 s,
+  4 CPUs 10.5 s, 8 CPUs 5.6 s. Doubling CPUs from 2 to 4 gives nothing,
+  because both use one chunk worker; 8 CPUs (two workers) nearly halves the
+  time. Generation follows the worker count, not the CPU count. C5 becomes
+  the first hole to work on after the baseline finishes.
