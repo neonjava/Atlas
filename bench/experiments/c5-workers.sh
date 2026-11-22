@@ -11,8 +11,10 @@
 #   drift since the baseline (heat, background load) would show up.
 # Part 2 (side effect): 20 wandering bots + 2 flyers on 4 CPUs, default
 #   workers vs 3 workers, tick intervals and MSPT (load.sh).
+# Part 3 (hole C6, tick threads): 46 wandering + 4 flying bots on 8 CPUs,
+#   default (1 tick thread) vs threaded-regions.threads=3.
 # Labels: exp-c5-control-t4, exp-c5-t<cpus>w<workers>, exp-c5-load-default,
-# exp-c5-load-w3.
+# exp-c5-load-w3, exp-c6-ticks-default, exp-c6-ticks-3.
 # Done: both parts, RUNS runs per config.
 # Not done: choosing a new default (decided from these numbers in HOLES.md).
 #
@@ -32,4 +34,11 @@ for variant in default 3; do
     [[ "$variant" != default ]] && set_arg="$WORKERS_KEY=$variant"
     ATLAS_SERVER_SET="$set_arg" HEAPS=4G GCS=g1 BOTS=22 FLYERS=2 THREADS=4 MEASURE_S=300 \
         bash "$here/../scenarios/gc.sh" "$jar" "exp-c5-load-$([[ $variant == default ]] && echo default || echo w$variant)" "$runs"
+done
+TICKS_KEY="config/paper-global.yml:threaded-regions.threads"
+for variant in default 3; do
+    set_arg=""
+    [[ "$variant" != default ]] && set_arg="$TICKS_KEY=$variant"
+    ATLAS_SERVER_SET="$set_arg" HEAPS=4G GCS=g1 BOTS=50 FLYERS=4 THREADS=8 MEASURE_S=300 \
+        bash "$here/../scenarios/gc.sh" "$jar" "exp-c6-ticks-$variant" "$runs"
 done
