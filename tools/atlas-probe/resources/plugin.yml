@@ -1,0 +1,13 @@
+name: AtlasProbe
+version: 1.0.0
+main: atlas.probe.ProbePlugin
+api-version: '26.3'
+folia-supported: true
+description: Records per-tick timing and region reports for Atlas benchmarks.
+commands:
+  atlasprobe:
+    description: "atlasprobe start <csv> | watch <x> <z> | stop"
+    permission: atlas.probe
+permissions:
+  atlas.probe:
+    default: op
