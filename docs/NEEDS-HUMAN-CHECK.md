@@ -10,3 +10,7 @@ decision. Newest last.
   smoother.
 - **Merging PRs.** As asked, PRs are opened on neonjava/Atlas and left for
   review; none are merged by the automation.
+- **Stale branch `rust/noise-kernel` on GitHub.** It was rebased locally after
+  PR #5, and rewriting a pushed branch (force-push) was not allowed, so the
+  work continues on `rust/perlin-kernel`. The old branch has no PR and can be
+  deleted whenever you like.
