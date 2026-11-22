@@ -7,11 +7,9 @@
 #   2. it is teleported TELEPORTS times to far, never-generated places; the
 #      bot logs when 50%, 90% and 100% of the chunks a vanilla client would
 #      render have arrived (fill50/fill90/fill100);
-#   3. a second bot flies in a straight line through new terrain at
-#      FLY_SPEED blocks/s for FLY_SECONDS; it logs each second which share of
-#      its view is present (view_permille).
+# Flying through new terrain is a separate scenario (fly.sh).
 # Done: all of the above, for each view distance x server thread count.
-# Not done: elytra physics (bots fly in creative mode at a fixed speed).
+# Not done: chunks that already exist on disk (see the load-rate experiments).
 #
 # Usage: chunks.sh <server.jar> <label> [runs] ; results go to
 #        bench/results/chunks/<label>/vd<V>-t<T>/run<N>.tar.gz
@@ -35,8 +33,6 @@ TELEPORTS="${TELEPORTS:-6}"
 TELEPORT_SPACING="${TELEPORT_SPACING:-8000}"
 TELEPORT_Y=200
 FILL_TIMEOUT_S="${FILL_TIMEOUT_S:-240}"
-FLY_SPEED="${FLY_SPEED:-30}"
-FLY_SECONDS="${FLY_SECONDS:-90}"
 # The bot process outlives the scripted steps; it is stopped explicitly.
 BOT_MAX_SECONDS=36000
 
@@ -80,7 +76,6 @@ for vd in "${VIEW_DISTANCES[@]}"; do
                 wait_event "$dir/bot.csv" fill100 "$mark" "$FILL_TIMEOUT_S" || echo "  teleport $i fill timed out"
             done
             atlas_bots_stop
-            atlas_bots "$dir" "$dir/bot-fly.csv" --count 1 --prefix flyer --view "$vd" --mode fly --speed "$FLY_SPEED" --duration-s "$FLY_SECONDS"
             atlas_cmd "$dir" "atlasprobe stop"
             atlas_stop "$dir"
             atlas_package_run "$dir" "$dest" "$label/$cfg/run$run"

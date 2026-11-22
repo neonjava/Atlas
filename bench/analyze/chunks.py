@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-# chunks.py — summarises scenario A (chunk loading) runs.
+# chunks.py — summarises scenario A runs: chunks.sh (teleports) and fly.sh.
 #
 # Why: turns raw bot/probe events into the per-run and per-config numbers
 # shown on the website, so no number is typed by hand.
-# Per run: median fill50/fill90/fill100 over the measured teleports (the
-# first teleport is a warm-up), the fly bot's median and minimum view
-# coverage after its first FLY_SKIP_S seconds, the number of fills that timed
-# out, and the server's mean chunk generation rate.
+# chunks.sh, per run: median fill50/fill90/fill100 over the measured teleports
+# (the first teleport is a warm-up), fills that timed out, and the server's
+# mean chunk generation rate.
+# fly.sh, per run: median and worst view coverage after the first FLY_SKIP_S
+# seconds (join and climb), and server position corrections (non-zero means
+# the bot was held back and the run is suspect).
+# The early chunk baseline archives also hold a bot-fly.csv from a flyer that
+# was stuck at spawn height (see docs/JOURNAL.md); it is ignored on purpose.
 # Done: per-run CSV (runs.csv) and per-config summary (summary.json).
 # Not done: statistical tests; the docs compare medians and spreads.
 #
@@ -19,12 +23,12 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import common  # noqa: E402
 
 WARMUP_TELEPORTS = 1
-# The flyer starts at spawn, where chunks already exist; skip that part.
+# Skip the join and the climb to flying height (about 5 s at 30 blocks/s).
 FLY_SKIP_S = 30
 MS_PER_S = 1000.0
 
 
-def run_metrics(files: dict) -> dict:
+def teleport_metrics(files: dict) -> dict:
     bot = common.rows(files["bot.csv"])
     teleports = []
     current = None
@@ -44,34 +48,47 @@ def run_metrics(files: dict) -> dict:
         m[ev + "_s"] = statistics.median(vals) if vals else None
     m["timeouts"] = sum(1 for t in measured if "fill100" not in t)
     m["view_chunks"] = measured[0].get("chunks") if measured else None
-    fly = common.rows(files.get("bot-fly.csv", "t_ms,bot,event,a,b\n"))
+    m["server_gen_rate_mean"] = gen_rate(files)
+    return m
+
+
+def fly_metrics(files: dict) -> dict:
+    fly = common.rows(files["bot-fly.csv"])
     joined = next((int(r["t_ms"]) for r in fly if r["event"] == "joined"), None)
-    cov = [int(r["a"]) / 10.0 for r in fly
-           if r["event"] == "view_permille" and joined is not None and int(r["t_ms"]) - joined >= FLY_SKIP_S * MS_PER_S]
-    m["fly_view_pct_median"] = statistics.median(cov) if cov else None
-    m["fly_view_pct_min"] = min(cov) if cov else None
+
+    def after_skip(r):
+        return joined is not None and int(r["t_ms"]) - joined >= FLY_SKIP_S * MS_PER_S
+
+    cov = [int(r["a"]) / 10.0 for r in fly if r["event"] == "view_permille" and after_skip(r)]
+    return {
+        "fly_view_pct_median": statistics.median(cov) if cov else None,
+        "fly_view_pct_min": min(cov) if cov else None,
+        "fly_corrections": sum(int(r["a"]) for r in fly if r["event"] == "corrections"),
+        "server_gen_rate_mean": gen_rate(files),
+    }
+
+
+def gen_rate(files: dict):
     probe = common.rows(files.get("probe.csv", "t_ms,kind,region,v1\n"))
     gen = [float(r["v1"]) for r in probe if r["kind"] == "chunk_rate"]
-    m["server_gen_rate_mean"] = statistics.fmean(gen) if gen else None
-    return m
+    return statistics.fmean(gen) if gen else None
 
 
 def main() -> None:
     root = pathlib.Path(sys.argv[1])
+    scenario = root.resolve().parent.name
+    metrics = fly_metrics if scenario == "fly" else teleport_metrics
     records = []
     summary = {}
     for cfg_dir in sorted(p for p in root.iterdir() if p.is_dir()):
         per_run = []
         for archive in sorted(cfg_dir.glob("run*.tar.gz")):
-            m = run_metrics(common.read_run(archive))
+            m = metrics(common.read_run(archive))
             m = {"config": cfg_dir.name, "run": archive.name.split(".")[0], **m}
             records.append(m)
             per_run.append(m)
-        summary[cfg_dir.name] = {
-            key: common.spread([r[key] for r in per_run])
-            for key in ("fill50_s", "fill90_s", "fill100_s", "fly_view_pct_median", "fly_view_pct_min", "server_gen_rate_mean")
-        }
-        summary[cfg_dir.name]["timeouts_total"] = sum(r["timeouts"] for r in per_run)
+        keys = [k for k in per_run[0] if k not in ("config", "run")] if per_run else []
+        summary[cfg_dir.name] = {key: common.spread([r[key] for r in per_run]) for key in keys}
     common.write_csv(root / "runs.csv", records)
     common.write_json(root / "summary.json", summary)
 

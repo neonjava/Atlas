@@ -52,6 +52,7 @@ METRICS = {
     "fly_view_pct_median": ("View present while flying (median)", "%"),
     "fly_view_pct_min": ("View present while flying (worst second)", "%"),
     "server_gen_rate_mean": ("Server chunk generation rate", "chunks/s"),
+    "fly_corrections": ("Server position corrections while flying", "count"),
     "tick_p50_ms": ("Tick interval, median", "ms"),
     "tick_p99_ms": ("Tick interval, 99th percentile", "ms"),
     "tick_max_ms": ("Longest tick interval", "ms"),

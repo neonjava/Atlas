@@ -28,7 +28,8 @@ the website come from the files these scripts write.
 
 | Script | Question | Default matrix |
 |---|---|---|
-| `chunks.sh` | How fast do *new* chunks reach a player? | view distance 8 / 12 / 16 × server threads 2 / 4 / 8 |
+| `chunks.sh` | How fast do *new* chunks reach a player after a teleport? | view distance 8 / 12 / 16 × server threads 2 / 4 / 8 |
+| `fly.sh` | Is the view full while flying over new land at 30 blocks/s? | same matrix |
 | `tps.sh` | How steady are ticks with spread-out players over a long time? | 10 / 50 / 100 bots, 30 minutes measured |
 | `gc.sh` | How long are garbage-collection pauses, and do ticks drop? | heap 2 / 4 / 6 GB × G1 / ZGC / Shenandoah |
 | `crowd.sh` | Does one crowded region keep up? Then the same players spread out. | 50 / 100 bots |

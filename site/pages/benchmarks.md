@@ -12,7 +12,7 @@ from the slowest to the fastest run. A small box means the runs agreed.
 
 [[chart chunks fill90_s baseline]]
 
-[[chart chunks fly_view_pct_median baseline]]
+[[chart fly fly_view_pct_median baseline]]
 
 ## Garbage collection
 

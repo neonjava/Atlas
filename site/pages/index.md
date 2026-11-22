@@ -28,7 +28,7 @@ there are before-and-after numbers from the same machine and settings.
 How long a player waits after a teleport until every chunk they should see
 has arrived (view distance 12, server limited to 4 CPU threads):
 
-[[cards chunks baseline vd12-t4 fill100_s fill90_s fly_view_pct_median]]
+[[cards chunks baseline vd12-t4 fill100_s fill90_s server_gen_rate_mean]]
 
 More on the [Baseline](baseline.html) and [Benchmarks](benchmarks.html) pages,
 what went wrong on [Failed Experiments](failed.html), and every step in

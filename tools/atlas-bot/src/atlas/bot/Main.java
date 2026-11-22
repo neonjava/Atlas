@@ -10,7 +10,7 @@
  *        --events <out.csv> [--host 127.0.0.1] [--port 25565] [--count 1]
  *        [--prefix bot] [--mode idle|fly|wander] [--speed 20] [--view 12]
  *        [--wander-radius 32] [--join-interval-ms 200] [--duration-s 60]
- *        [--chunks-per-tick 64] [--seed 1] [--flyers 0]
+ *        [--chunks-per-tick 64] [--seed 1] [--flyers 0] [--fly-y 300]
  *
  * --flyers K makes bots 0..K-1 fly outward (fresh terrain) whatever --mode is.
  *
@@ -30,6 +30,7 @@ public final class Main {
     private static final int TICKER_THREADS = 2;
     /** The vanilla client caps desired chunks per tick at 64 (PlayerChunkSender clamps to it). */
     private static final float MAX_CHUNKS_PER_TICK = 64.0F;
+    private static final double DEFAULT_FLY_Y = 300.0;
 
     static final class Options {
         Path ids;
@@ -47,6 +48,8 @@ public final class Main {
         float chunksPerTick = MAX_CHUNKS_PER_TICK;
         long seed = 1;
         int flyers;
+        /** Flying bots climb to this height first; above the highest terrain (build limit 320). */
+        double flyY = DEFAULT_FLY_Y;
     }
 
     private Main() {
@@ -97,6 +100,7 @@ public final class Main {
                 case "--chunks-per-tick" -> o.chunksPerTick = Float.parseFloat(v);
                 case "--seed" -> o.seed = Long.parseLong(v);
                 case "--flyers" -> o.flyers = Integer.parseInt(v);
+                case "--fly-y" -> o.flyY = Double.parseDouble(v);
                 default -> throw new IllegalArgumentException("unknown option " + args[i]);
             }
         }

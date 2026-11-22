@@ -66,3 +66,14 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   "1 target thread(s)". So on small machines one thread generates all new
   terrain. Added as candidate C5; an experiment with more workers comes after
   the baseline.
+- 2026-11-22 23:50 — Caught a bad metric before trusting it: in the chunk
+  baseline the flying bot reported a 100% full view while receiving zero new
+  chunks after spawn. It was flying at spawn height, ran into a hill, and the
+  server silently held it in place every tick. Fixes: flyers now climb to
+  y=300 before flying; the bot logs server position corrections each second,
+  so a stuck bot shows up in the data; flying moved into its own scenario
+  (`fly.sh`). The teleport metrics of the chunk baseline are not affected;
+  its flight data is ignored by the analysis and not shown anywhere.
+- 2026-11-22 23:50 — Lesson: bash reads a running script from disk as it
+  goes, so a running scenario script is now only ever replaced atomically
+  (write a new file, then rename), never edited in place.

@@ -7,7 +7,8 @@
  * and benchmarks need many players without real clients.
  * Done: login, configuration, play; idle / fly / wander movement; metrics for
  * time-to-fill the view after a teleport, view coverage while flying, chunk
- * and byte rates, and round-trip time through the server tick (ping packet).
+ * and byte rates, round-trip time through the server tick (ping packet), and
+ * how often the server corrected the bot's position (a stuck bot shows up).
  * Not done: no physics (bots fly in creative mode), no chat, no entities, no
  * block or inventory actions, no encryption (offline mode only).
  *
@@ -99,6 +100,8 @@ final class Bot implements Runnable {
     private int fillNext;
     private int chunksThisSecond;
     private long bytesThisSecond;
+    /** Server position corrections (small teleports) since the last report. */
+    private int correctionsThisSecond;
 
     Bot(final Main.Options opt, final int index, final PacketIds ids, final EventLog log, final ScheduledExecutorService ticker) {
         this.opt = opt;
@@ -288,6 +291,10 @@ final class Bot implements Runnable {
                 this.anchorZ = nz;
                 startFill(chunkOf(nx), chunkOf(nz));
                 this.log.log(this.name, "teleport", (long) nx, (long) nz);
+            } else {
+                synchronized (this.chunkLock) {
+                    this.correctionsThisSecond++;
+                }
             }
             send("accept_teleportation", new Wire.Out().varInt(id).f64(this.x).f64(this.y).f64(this.z).f32(this.yaw).f32(this.pitch));
         }
@@ -399,8 +406,13 @@ final class Bot implements Runnable {
                     return false;
                 }
                 case FLY -> {
-                    this.x += Math.cos(this.heading) * step;
-                    this.z += Math.sin(this.heading) * step;
+                    // Climb above all terrain first, so hills cannot block the flight.
+                    if (this.y < this.opt.flyY) {
+                        this.y = Math.min(this.opt.flyY, this.y + step);
+                    } else {
+                        this.x += Math.cos(this.heading) * step;
+                        this.z += Math.sin(this.heading) * step;
+                    }
                 }
                 case WANDER -> {
                     double dist = Math.hypot(this.x - this.anchorX, this.z - this.anchorZ);
@@ -420,6 +432,7 @@ final class Bot implements Runnable {
     private void report() throws IOException {
         int chunks;
         long bytes;
+        int corrections;
         int cx;
         int cz;
         synchronized (this.posLock) {
@@ -429,8 +442,10 @@ final class Bot implements Runnable {
         synchronized (this.chunkLock) {
             chunks = this.chunksThisSecond;
             bytes = this.bytesThisSecond;
+            corrections = this.correctionsThisSecond;
             this.chunksThisSecond = 0;
             this.bytesThisSecond = 0;
+            this.correctionsThisSecond = 0;
             if (this.mode == Mode.FLY) {
                 Set<Long> visible = visibleChunks(cx, cz);
                 int have = 0;
@@ -443,6 +458,9 @@ final class Bot implements Runnable {
             }
         }
         this.log.log(this.name, "rate", chunks, bytes);
+        if (corrections > 0) {
+            this.log.log(this.name, "corrections", corrections, 0);
+        }
         send("ping_request", new Wire.Out().i64(System.nanoTime()));
     }
 
