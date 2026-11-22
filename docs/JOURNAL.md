@@ -83,3 +83,15 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   because both use one chunk worker; 8 CPUs (two workers) nearly halves the
   time. Generation follows the worker count, not the CPU count. C5 becomes
   the first hole to work on after the baseline finishes.
+- 2026-11-23 03:02 — Profiles done (JFR, not used for timing). Chunk
+  generation (vd12, 4 CPUs): workers 89% of samples; self time is spread thin
+  (aquifer 8.3%, surface rules ~10%, Perlin kernels ~4.6%). Load run (50
+  spread bots + 4 flyers, 8 CPUs, 4 GB G1): the single default tick thread is
+  saturated (≈10 TPS) and the heap stays almost full of live data, with G1
+  pauses of 1.3-1.7 s. New candidates C6 (tick threads) and C7 (heap/GC).
+- 2026-11-23 03:02 — Rust candidate R1 (issue #4): ported the Perlin
+  volume kernel to Rust. 2,000 random volumes are bit-identical to the
+  server's Java kernel; low-frequency volumes are 2.2x faster, high-frequency
+  equal. FFM costs ~210 ns per call, JNI ~300 ns, so FFM is used. Because the
+  kernel is only ~5% of generation CPU the end-to-end gain may be too small
+  to see; an A/B on the same jar (native on/off) is queued and decides.
