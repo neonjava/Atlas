@@ -25,8 +25,11 @@ else
     git -C "$work" checkout --detach --force "$ref"
 fi
 cd "$work"
-systemd-run --user --scope --quiet -p MemoryMax="$ATLAS_TOTAL_MEM_CAP" -p CPUQuota="$((ATLAS_MAX_THREADS * 100))%" \
-    ./gradlew applyAllPatches createPaperclipJar --max-workers="$ATLAS_MAX_THREADS" --no-daemon -q
+# Two runs: the jar task only exists once the patched projects are there.
+for task in applyAllPatches createPaperclipJar; do
+    systemd-run --user --scope --quiet -p MemoryMax="$ATLAS_TOTAL_MEM_CAP" -p CPUQuota="$((ATLAS_MAX_THREADS * 100))%" \
+        ./gradlew "$task" --max-workers="$ATLAS_MAX_THREADS" --no-daemon -q
+done
 cp folia-server/build/libs/folia-paperclip-*.jar "$jars/$name.jar"
 if [[ -d native/atlas-native ]]; then
     (cd native/atlas-native && CARGO_TARGET_DIR="$ATLAS_BUILD_DIR/cargo-target" cargo build --release --quiet)
