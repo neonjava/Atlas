@@ -1,0 +1,2 @@
+config,run,tick_p50_ms,tick_p99_ms,tick_max_ms,slow_ticks_per_min,region_tick_p99_ms,region_tick_max_ms,mspt_mean,mspt_p99,tps_min_window,stw_pause_max_ms,stw_pause_total_ms_per_min,cpu_cores_used,net_kib_per_player_s,players
+g1-4G,run1,98.781,276.168,2166.318,248.15698612240544,,,94.48560237143406,265.562796,4.781627634737239,1495.433766,6317.9860450188635,4.175276285443856,6.233969184924613,50
