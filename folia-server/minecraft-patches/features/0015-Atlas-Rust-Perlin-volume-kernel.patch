@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: neonjava <neonjavadev@gmail.com>
+Date: Mon, 23 Nov 2026 03:00:00 +0530
+Subject: [PATCH] Atlas: Rust Perlin volume kernel
+
+Calls the Rust kernel from native/atlas-native for PerlinNoise and
+SmearedPerlinNoise volume fills. The output is bit-identical; when the
+native library is missing or disabled the Java code runs unchanged.
+See issue #4.
+---
+ net/minecraft/world/level/levelgen/synth/PerlinNoise.java   | 6 ++++++
+ .../world/level/levelgen/synth/SmearedPerlinNoise.java      | 6 ++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
+index 12be06b795343d0f61cd908dd3f62fab70592a81..f648578a20222669eada7ee9beeb231f69d606d6 100644
+--- a/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
++++ b/net/minecraft/world/level/levelgen/synth/PerlinNoise.java
+@@ -155,6 +155,12 @@ public class PerlinNoise extends GradientNoise implements ca.spottedleaf.moonris
+     @Override
+     public void addToVolume(final DensityBuffer buffer, final DensityVolume volume,
+                             final double xzScale, final double yScale, final float amplitude) {
++        // Atlas start - Rust Perlin volume kernel; bit-identical, falls back to Java when unavailable
++        if (dev.atlas.natives.NativeNoise.addToVolume(this.pAdj, this.offsetX, this.offsetY, this.offsetZ,
++                dev.atlas.natives.NativeNoise.PLAIN_PERLIN, buffer.values, volume, xzScale, yScale, amplitude)) {
++            return;
++        }
++        // Atlas end - Rust Perlin volume kernel
+         final float[] vanillaNoise;
+         if (DEBUG_NOISE) {
+             final float[] cpy = buffer.values.clone();
+diff --git a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
+index e8eafc7063c7563b0e97ec508dd5401efa3d2b31..2149224e50beecc35924a075f8b866a89987b3e5 100644
+--- a/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
++++ b/net/minecraft/world/level/levelgen/synth/SmearedPerlinNoise.java
+@@ -64,6 +64,12 @@ public class SmearedPerlinNoise extends PerlinNoise {
+     @Override
+     public void addToVolume(final DensityBuffer buffer, final DensityVolume volume,
+                             final double xzScale, final double yScale, final float amplitude) {
++        // Atlas start - Rust Perlin volume kernel; bit-identical, falls back to Java when unavailable
++        if (dev.atlas.natives.NativeNoise.addToVolume(this.pAdj, this.offsetX, this.offsetY, this.offsetZ,
++                this.fudgeYScale, buffer.values, volume, xzScale, yScale, amplitude)) {
++            return;
++        }
++        // Atlas end - Rust Perlin volume kernel
+         final float[] vanillaNoise;
+         if (DEBUG_NOISE) {
+             final float[] cpy = buffer.values.clone();
