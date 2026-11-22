@@ -4,8 +4,9 @@
 # Why: turns raw bot/probe events into the per-run and per-config numbers
 # shown on the website, so no number is typed by hand.
 # chunks.sh, per run: median fill50/fill90/fill100 over the measured teleports
-# (the first teleport is a warm-up), fills that timed out, and the server's
-# mean chunk generation rate.
+# (the first teleport is a warm-up), fills that timed out, the server's mean
+# chunk generation rate, and global-region tick interval p99 / max over the
+# whole run (does faster generation cost tick time?).
 # fly.sh, per run: median and worst view coverage after the first FLY_SKIP_S
 # seconds (join and climb), and server position corrections (non-zero means
 # the bot was held back and the run is suspect).
@@ -23,6 +24,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import common  # noqa: E402
 
 WARMUP_TELEPORTS = 1
+TICK_PERCENTILE = 0.99
+US_PER_MS = 1000.0
 # Skip the join and the climb to flying height (about 5 s at 30 blocks/s).
 FLY_SKIP_S = 30
 MS_PER_S = 1000.0
@@ -49,6 +52,10 @@ def teleport_metrics(files: dict) -> dict:
     m["timeouts"] = sum(1 for t in measured if "fill100" not in t)
     m["view_chunks"] = measured[0].get("chunks") if measured else None
     m["server_gen_rate_mean"] = gen_rate(files)
+    ticks = [float(r["v1"]) / US_PER_MS for r in common.rows(files.get("probe.csv", "t_ms,kind,region,v1\n"))
+             if r["kind"] == "gtick"]
+    m["tick_p99_ms"] = common.percentile(ticks, TICK_PERCENTILE)
+    m["tick_max_ms"] = max(ticks) if ticks else None
     return m
 
 

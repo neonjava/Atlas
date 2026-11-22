@@ -20,7 +20,6 @@
 # Not done: per-region breakdown tables (in the raw probe.csv if needed).
 #
 # Usage: load.py <results/<scenario>/<label>>
-import math
 import pathlib
 import re
 import statistics
@@ -37,14 +36,6 @@ S_PER_MIN = 60.0
 BYTES_PER_KIB = 1024.0
 SAFEPOINT_RE = re.compile(r"^\[(\d+\.\d+)s\].*Safepoint \"(\w+)\".*Total: (\d+) ns")
 WINDOWS = [("measure_start", "measure_end", ""), ("measure2_start", "measure2_end", "-spread")]
-
-
-def pct(values: list, q: float):
-    """Nearest-rank percentile, the same rule the server probe uses."""
-    if not values:
-        return None
-    s = sorted(values)
-    return s[max(0, min(len(s) - 1, math.ceil(q * len(s)) - 1))]
 
 
 def epoch_of(rows_: list, kind_col: str, kind: str, value_col: str):
@@ -65,12 +56,12 @@ def window_metrics(files: dict, start: dict, end: dict) -> dict:
             t = p_epoch + float(r["t_ms"])
             return t0 <= t <= t1
         g = [float(r["v1"]) / US_PER_MS for r in probe if r["kind"] == "gtick" and inwin(r)]
-        m["tick_p50_ms"] = pct(g, 0.50)
-        m["tick_p99_ms"] = pct(g, 0.99)
+        m["tick_p50_ms"] = common.percentile(g, 0.50)
+        m["tick_p99_ms"] = common.percentile(g, 0.99)
         m["tick_max_ms"] = max(g) if g else None
         m["slow_ticks_per_min"] = sum(1 for v in g if v > SLOW_TICK_MS) / minutes if g else None
         w = [float(r["v1"]) / US_PER_MS for r in probe if r["kind"] == "tick" and inwin(r)]
-        m["region_tick_p99_ms"] = pct(w, 0.99)
+        m["region_tick_p99_ms"] = common.percentile(w, 0.99)
         m["region_tick_max_ms"] = max(w) if w else None
         rep = [r for r in probe if r["kind"] == "report" and r["region"] != "global" and inwin(r) and int(r["v8"]) > 0]
         m["mspt_mean"] = statistics.fmean(float(r["v1"]) for r in rep) if rep else None

@@ -2,11 +2,12 @@
 #
 # Why: every scenario reads run archives and reports medians with spread the
 # same way, so the rules live in one place.
-# Done: archive reading, CSV parsing, median/min/max/IQR summaries.
+# Done: archive reading, CSV parsing, percentiles, median/min/max/IQR summaries.
 # Not done: plotting (the website builds charts from the JSON written here).
 import csv
 import io
 import json
+import math
 import pathlib
 import statistics
 import tarfile
@@ -24,6 +25,14 @@ def read_run(archive: pathlib.Path) -> dict:
 
 def rows(text: str) -> list:
     return list(csv.DictReader(io.StringIO(text)))
+
+
+def percentile(values: list, q: float):
+    """Nearest-rank percentile (q in [0, 1]); the same rule the server probe uses."""
+    if not values:
+        return None
+    s = sorted(values)
+    return s[max(0, min(len(s) - 1, math.ceil(q * len(s)) - 1))]
 
 
 def spread(values: list) -> dict:
