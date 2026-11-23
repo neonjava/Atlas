@@ -16,7 +16,15 @@ source "$here/../lib/guard.sh"; source "$here/../lib/server.sh"; source "$here/.
 jar="$1"; label="$2"; runs="${3:-5}"
 HEAPS=(${HEAPS:-2G 4G 6G})
 GCS=(${GCS:-g1 zgc shenandoah})
-declare -A GC_FLAG=([g1]="-XX:+UseG1GC" [zgc]="-XX:+UseZGC" [shenandoah]="-XX:+UseShenandoahGC")
+# g1aikar: the G1 settings widely recommended for Paper servers ("Aikar's
+# flags", docs.papermc.io); they start background marking much earlier
+# (InitiatingHeapOccupancyPercent=15) and keep a larger reserve.
+AIKAR_FLAGS="-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions \
+-XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M \
+-XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 \
+-XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem \
+-XX:MaxTenuringThreshold=1"
+declare -A GC_FLAG=([g1]="-XX:+UseG1GC" [g1aikar]="$AIKAR_FLAGS" [zgc]="-XX:+UseZGC" [shenandoah]="-XX:+UseShenandoahGC")
 export LAYOUT=spread BOTS="${BOTS:-50}" FLYERS="${FLYERS:-4}" THREADS="${THREADS:-8}" VIEW="${VIEW:-10}"
 export WARMUP_S="${WARMUP_S:-60}" MEASURE_S="${MEASURE_S:-480}"
 # The server cap must hold the largest heap plus JVM overhead (metaspace,
