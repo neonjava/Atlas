@@ -143,3 +143,12 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   runner stopped with it, in the middle of the 5th C6 run (that run is
   redone). The queue now runs as a systemd user unit (`atlas-queue`), so it
   survives session restarts.
+- 2026-11-23 08:38 — C6 (one-region layout, 50 bots + 4 flyers, 8 CPUs,
+  5 runs each): with 3 tick threads instead of the default 1, the global
+  region's tick median went 97 → 50 ms and p99 1367 → 72 ms; slow ticks per
+  minute 237 → 7. The busy world region itself is unchanged (one region is
+  always one thread), which is the crowd problem of target C. True-spread
+  repeat queued.
+- 2026-11-23 08:38 — Built the R1 jar (Rust kernel hook applied cleanly
+  as Atlas feature patch 0015) and started the A/B: same jar, Java arm logs
+  "native code disabled", native arm logs "native library loaded (ABI 1)".
