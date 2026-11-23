@@ -46,6 +46,14 @@
   "region_tick_p99_ms": {
    "n": 0
   },
+  "regions_with_players": {
+   "max": 1,
+   "median": 1,
+   "min": 1,
+   "n": 5,
+   "q1": 1.0,
+   "q3": 1.0
+  },
   "slow_ticks_per_min": {
    "max": 16.997337083856863,
    "median": 15.79705121710614,

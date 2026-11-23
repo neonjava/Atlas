@@ -125,3 +125,21 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   it is not a leak: G1's background marking starts too late for chunk
   generation's allocation bursts. Queued a GC comparison (G1, G1 with
   Aikar's flags, ZGC, Shenandoah) for hole C7.
+- 2026-11-23 08:14 — Mistake found and fixed: the "spread" layout (bots
+  512 blocks apart) put **all** bots in one Folia region, because Folia
+  merges regions whose 16×16-chunk sections are within two sections of each
+  other and every player keeps ~11 chunks loaded around them. The earlier
+  note that "50 regions share one tick thread" was wrong; it was one big
+  region. The spread grid is now 1536 blocks, `load.py` reports how many
+  regions hold players, and experiments that began at 512 keep 512 so their
+  runs stay comparable. A true-spread tick-thread run (C6b) is queued.
+- 2026-11-23 08:14 — C5 under load: 3 workers on 4 CPUs with 22 bots made
+  ticking much worse (MSPT mean 48.7 → 90.9 ms, worst window 12.8 → 7.2 TPS)
+  while total CPU only went from 2.2 to 2.4 cores. Faster generation hands
+  the single region tick thread more new chunks to process. So more workers
+  alone cannot be the fix; it must be weighed together with C6 and with
+  lower worker priority (queued).
+- 2026-11-23 08:14 — The work session restarted at ~07:40 and the queue
+  runner stopped with it, in the middle of the 5th C6 run (that run is
+  redone). The queue now runs as a systemd user unit (`atlas-queue`), so it
+  survives session restarts.
