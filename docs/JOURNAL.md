@@ -109,3 +109,19 @@ Times are the machine clock (IST, UTC+5:30), format `YYYY-MM-DD HH:MM`.
   equal. FFM costs ~210 ns per call, JNI ~300 ns, so FFM is used. Because the
   kernel is only ~5% of generation CPU the end-to-end gain may be too small
   to see; an A/B on the same jar (native on/off) is queued and decides.
+- 2026-11-23 05:48 — C5 experiment, chunk part (5 runs each, median time to
+  a full view; baseline in brackets). Control at 4 CPUs matches the baseline
+  (18.9 vs 19.0 s at vd12), so no drift. 2 CPUs + 2 workers: vd12 15.1 s
+  (19.3), vd16 20.0 s (32.1). 4 CPUs + 3 workers: vd12 8.8 s (19.0), vd16
+  13.4 s (31.4) — 2.2-2.3x faster; 4 workers no better. 8 CPUs + 6 workers:
+  vd12 7.9 s (9.5), vd16 13.1 s (15.1). Cost: global tick p99 rose from ~52 ms
+  to ~72 ms (2 CPUs) and ~95-100 ms (4 CPUs) during generation, because workers
+  compete with the tick thread. At vd16 the fills now run at ~70 chunks/s,
+  right at the 75/s per-player send limit (hole C1). Queued: workers at
+  nice 10 (does the tick thread recover?) and a send-limit experiment.
+- 2026-11-23 05:48 — Unprofiled load check (22 bots incl. 2 flyers, 4 CPUs,
+  4 GB G1, default threads): MSPT mean 48.7 ms, worst 15 s window 12.8 TPS,
+  and **Full GCs of 0.98-1.21 s**. Live data after a Full GC is 1.5-2.1 GB, so
+  it is not a leak: G1's background marking starts too late for chunk
+  generation's allocation bursts. Queued a GC comparison (G1, G1 with
+  Aikar's flags, ZGC, Shenandoah) for hole C7.
