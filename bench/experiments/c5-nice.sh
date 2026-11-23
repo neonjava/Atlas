@@ -22,5 +22,6 @@ for pair in 2:2 4:3; do
     ATLAS_SERVER_SET="$WORKERS_KEY=$workers" VIEW_DISTANCES="12 16" THREADS="$cpus" \
         bash "$here/../scenarios/chunks.sh" "$jar" "exp-c5-t${cpus}w${workers}-nice10" "$runs"
 done
-ATLAS_SERVER_SET="$WORKERS_KEY=3" HEAPS=4G GCS=g1 BOTS=22 FLYERS=2 THREADS=4 MEASURE_S=300 \
+# Same 512-block grid as exp-c5-load-w3, which this run is compared with.
+ATLAS_SPREAD_SPACING=512 ATLAS_SERVER_SET="$WORKERS_KEY=3" HEAPS=4G GCS=g1 BOTS=22 FLYERS=2 THREADS=4 MEASURE_S=300 \
     bash "$here/../scenarios/gc.sh" "$jar" "exp-c5-load-w3-nice10" "$runs"

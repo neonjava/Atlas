@@ -29,6 +29,9 @@ for pair in 2:2 4:3 4:4 8:6; do
     ATLAS_SERVER_SET="$WORKERS_KEY=$workers" VIEW_DISTANCES="12 16" THREADS="$cpus" \
         bash "$here/../scenarios/chunks.sh" "$jar" "exp-c5-t${cpus}w${workers}" "$runs"
 done
+# Parts 2 and 3 started with the 512-block grid (one region); keep it so all
+# their runs stay comparable (see bench/lib/load.sh).
+export ATLAS_SPREAD_SPACING=512
 for variant in default 3; do
     set_arg=""
     [[ "$variant" != default ]] && set_arg="$WORKERS_KEY=$variant"

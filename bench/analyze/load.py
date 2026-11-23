@@ -13,6 +13,8 @@
 #   tps_min_window  lowest per-region 15 s TPS
 #   stw_pause_max_ms / stw_pause_total_ms_per_min  all stop-the-world
 #                safepoint pauses (mostly GC) from safepoint.log
+#   regions_with_players  median over 15 s reports of how many regions hold
+#                players (checks that a "spread" layout really is spread)
 #   cpu_cores_used  server CPU time / wall time
 #   net_kib_per_player_s  bytes the bots received per player per second
 # Crowd runs have two windows: "<config>-crowd" and "<config>-spread".
@@ -67,6 +69,10 @@ def window_metrics(files: dict, start: dict, end: dict) -> dict:
         m["mspt_mean"] = statistics.fmean(float(r["v1"]) for r in rep) if rep else None
         m["mspt_p99"] = max(float(r["v4"]) for r in rep) if rep else None
         m["tps_min_window"] = min(float(r["v6"]) for r in rep) if rep else None
+        per_report = {}
+        for r in rep:
+            per_report[r["t_ms"]] = per_report.get(r["t_ms"], 0) + 1
+        m["regions_with_players"] = statistics.median(per_report.values()) if per_report else None
     jvm_start = float(start["jvm_start_epoch_ms"]) if start.get("jvm_start_epoch_ms") else None
     pauses = []
     if jvm_start is not None:

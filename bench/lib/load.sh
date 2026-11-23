@@ -22,9 +22,13 @@
 # spawn around them (mobs spawn 24-128 blocks from a player).
 ATLAS_BOT_Y=120
 # Spread layout: bots on a grid this many blocks apart, GRID_WIDTH per row.
-# 512 blocks (32 chunks) keeps neighbours in separate Folia regions at view
-# distance 10.
-ATLAS_SPREAD_SPACING=512
+# Folia merges regions whose 16x16-chunk sections are within 2 sections
+# (512 blocks) of each other, and each player keeps ~11 chunks around them
+# loaded at view distance 10, so neighbours need about 1100+ blocks between
+# them to stay in separate regions. The first experiments used 512 (which
+# put every bot in one region); they pass ATLAS_SPREAD_SPACING=512 to stay
+# comparable with their own earlier runs.
+ATLAS_SPREAD_SPACING="${ATLAS_SPREAD_SPACING:-1536}"
 ATLAS_SPREAD_GRID_WIDTH=10
 # Crowd layout: everyone around one point away from spawn.
 ATLAS_CROWD_X=2048
